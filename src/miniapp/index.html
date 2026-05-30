@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OtpX - Device Verification</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --teal: #00d4a3;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(0, 212, 163, 0.15);
+    border-radius: 20px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 360px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .logo {
+    width: 72px; height: 72px;
+    background: linear-gradient(135deg, #00d4a3, #3b82f6);
+    border-radius: 18px;
+    margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    box-shadow: 0 8px 24px rgba(0,212,163,0.3);
+  }
+  h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 8px; }
+  p { color: var(--muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 24px; }
+  .status {
+    background: rgba(0,212,163,0.08);
+    border: 1px solid rgba(0,212,163,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-align: left;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .status-row:last-child { border: none; }
+  .status-row span:last-child { color: var(--teal); font-weight: 600; }
+  .btn {
+    background: linear-gradient(135deg, var(--teal), #3b82f6);
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(0,212,163,0.3);
+  }
+  .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,212,163,0.4); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.2);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .success { color: var(--teal); font-size: 0.9rem; margin-top: 12px; }
+  .error { color: #ef4444; font-size: 0.85rem; margin-top: 12px; }
+  .shield { font-size: 0.75rem; color: var(--muted); margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🔐</div>
+  <h1>Device Verification</h1>
+  <p>We need to verify your device to prevent fraud and ensure fair usage of OtpX services.</p>
+
+  <div class="status" id="info-box">
+    <div class="status-row"><span>Status</span><span>Detecting...</span></div>
+    <div class="status-row"><span>Browser</span><span id="inf-ua">—</span></div>
+    <div class="status-row"><span>Screen</span><span id="inf-screen">—</span></div>
+    <div class="status-row"><span>Timezone</span><span id="inf-tz">—</span></div>
+    <div class="status-row"><span>Language</span><span id="inf-lang">—</span></div>
+  </div>
+
+  <button class="btn" id="verify-btn" onclick="doVerify()">
+    🔐 Verify My Device
+  </button>
+  <div id="msg"></div>
+  <div class="shield">🛡️ Only fingerprint hash is stored — no personal data</div>
+</div>
+
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+// Collect device info
+const devInfo = {
+  userAgent: navigator.userAgent,
+  screenRes: `${screen.width}x${screen.height}`,
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  language: navigator.language,
+  platform: navigator.platform || 'unknown',
+  cookiesEnabled: navigator.cookieEnabled,
+  doNotTrack: navigator.doNotTrack,
+  hardwareConcurrency: navigator.hardwareConcurrency || 0,
+  maxTouchPoints: navigator.maxTouchPoints || 0,
+};
+
+// Display info
+document.getElementById('inf-ua').textContent = navigator.userAgent.split(' ').slice(-1)[0] || 'Unknown';
+document.getElementById('inf-screen').textContent = devInfo.screenRes;
+document.getElementById('inf-tz').textContent = devInfo.timezone;
+document.getElementById('inf-lang').textContent = devInfo.language;
+
+// Get IP
+async function getIp() {
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    return d.ip || 'unknown';
+  } catch { return 'unknown'; }
+}
+
+async function doVerify() {
+  const btn = document.getElementById('verify-btn');
+  const msg = document.getElementById('msg');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Verifying...';
+  msg.innerHTML = '';
+
+  try {
+    const ip = await getIp();
+    devInfo.ip = ip;
+
+    const payload = JSON.stringify(devInfo);
+
+    if (tg && tg.sendData) {
+      tg.sendData(payload);
+      msg.innerHTML = '<div class="success">✅ Verification sent! Bot will respond shortly.</div>';
+      setTimeout(() => tg.close(), 2000);
+    } else {
+      // Fallback for non-Telegram environment
+      const userId = new URLSearchParams(window.location.search).get('uid');
+      if (userId) {
+        await fetch('/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, deviceData: devInfo }),
+        });
+        msg.innerHTML = '<div class="success">✅ Verified! Go back to the bot.</div>';
+      } else {
+        msg.innerHTML = '<div class="error">❌ Please open this from the Telegram bot.</div>';
+        btn.disabled = false;
+        btn.innerHTML = '🔐 Verify My Device';
+      }
+    }
+  } catch (err) {
+    msg.innerHTML = `<div class="error">❌ Error: ${err.message}</div>`;
+    btn.disabled = false;
+    btn.innerHTML = '🔐 Verify My Device';
+  }
+}
+</script>
+</body>
+</html>

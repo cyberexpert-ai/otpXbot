@@ -1,0 +1,30 @@
+{
+  "name": "otpx-bot",
+  "version": "2.0.0",
+  "description": "OtpX - Advanced OTP Service Telegram Bot",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "build": "npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3",
+    "sequelize": "^6.37.3",
+    "pg": "^8.12.0",
+    "pg-hstore": "^2.3.4",
+    "express": "^4.19.2",
+    "dotenv": "^16.4.5",
+    "axios": "^1.7.2",
+    "node-cron": "^3.0.3",
+    "uuid": "^9.0.1",
+    "@google/generative-ai": "^0.14.0",
+    "moment": "^2.30.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
